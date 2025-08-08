@@ -1,15 +1,14 @@
 .bubble {
     padding: 8px 12px;
     border-radius: 16px;
-    /* max-width dihapus dari sini */
 }
 
 .user-bubble {
-    background-color: #3584e4; /* Biru khas Adwaita */
+    background-color: #729fcf;
     color: white;
 }
 
 .ai-bubble {
-    background-color: #f6f5f4; /* Abu-abu terang khas Adwaita */
-    color: #3d3846;
+    background-color: #eeeeec;
+    color: #2e3436;
 }

@@ -1,62 +1,49 @@
-# === Target & Compiler ===
+# Target & Compiler
 TARGET := aicodefriend
 CC := gcc
 
-# === Direktori ===
+# Directories
 SRC_DIR := src
 CORE_DIR := $(SRC_DIR)/core
 UI_DIR := $(SRC_DIR)/ui
 API_DIR := $(SRC_DIR)/api
 UTILS_DIR := $(SRC_DIR)/utils
 
-# === Flags & Libraries (UPDATED) ===
-CFLAGS := $(shell pkg-config --cflags gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0 gtksourceview-5) -I$(SRC_DIR) -Wall
-LIBS := $(shell pkg-config --libs gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0 gtksourceview-5)
+# Flags & Libraries
+CFLAGS := $(shell pkg-config --cflags gtk+-3.0 json-glib-1.0 libsoup-3.0 gtksourceview-3.0) -I$(SRC_DIR) -Wall
+LIBS := $(shell pkg-config --libs gtk+-3.0 json-glib-1.0 libsoup-3.0 gtksourceview-3.0)
 
-# === File Source & Object ===
+# Source & Object Files
 SOURCES := $(wildcard $(SRC_DIR)/*.c $(CORE_DIR)/*.c $(UI_DIR)/*.c $(API_DIR)/*.c $(UTILS_DIR)/*.c)
 OBJECTS := $(SOURCES:.c=.o)
 
+# Main Rules
 
-# ==============================================================================
-# ATURAN UTAMA
-# ==============================================================================
-
-# Target default: build aplikasi
 all: $(TARGET)
 
-# Aturan untuk membuat executable utama
 $(TARGET): $(OBJECTS)
 	@echo "Linking..."
 	@$(CC) -o $@ $^ $(LIBS)
 	@echo "✅ $(TARGET) siap dijalankan!"
 
-# Aturan untuk mengkompilasi file .c menjadi .o
 %.o: %.c
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-# Target untuk menjalankan siklus: compile -> run -> clean
 run: $(TARGET)
 	@echo "🚀 Running application..."
 	@./$(TARGET)
 	@echo "🧹 Cleaning up..."
 	@$(MAKE) clean
 
-# Target untuk membersihkan file hasil build
 clean:
 	@rm -f $(TARGET) $(OBJECTS)
 
-
-# ==============================================================================
-# ATURAN UTILITAS (Listing File)
-# ==============================================================================
-
+# Utility Rules
 LISTING_DIR := z_listing
 LISTING_FILE := $(LISTING_DIR)/listing.txt
 ROOT := .
 
-# Target untuk membuat listing semua file proyek
 list:
 	@mkdir -p $(LISTING_DIR)
 	@echo "Generating file listing into $(LISTING_FILE)..."

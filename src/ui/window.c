@@ -3,23 +3,22 @@
 #include "../api/gemini_client.h"
 #include "../api/prompt.h"
 #include <json-glib/json-glib.h>
-
 #include "../core/app.h"
 
-// Struct untuk membawa data ke worker thread
+// Struct for thread data
 typedef struct {
     AICodeFriendApp *app;
     gchar *user_input;
 } ThreadData;
 
-// Deklarasi fungsi-fungsi statis yang akan digunakan di file ini
+// Static function declarations
 static void send_request_finish(GObject *source_object, GAsyncResult *res, gpointer user_data);
 static void send_request_in_thread(GTask *task, gpointer source_object, gpointer task_data, GCancellable *cancellable);
 static void on_send_button_clicked(GtkButton *button, gpointer user_data);
 static void on_settings_button_clicked(GtkButton *button, gpointer user_data);
 static void on_new_chat_clicked(GtkButton *button, gpointer user_data);
 
-// Fungsi untuk membebaskan ThreadData
+// Free ThreadData
 static void thread_data_free(ThreadData *data) {
     if (data) {
         g_free(data->user_input);
@@ -27,7 +26,7 @@ static void thread_data_free(ThreadData *data) {
     }
 }
 
-// Fungsi ini akan dijalankan di worker thread
+// Worker thread function for API requests
 static void send_request_in_thread(GTask *task, gpointer source_object, gpointer task_data, GCancellable *cancellable) {
     ThreadData *data = (ThreadData*)task_data;
     AICodeFriendApp *app = data->app;
@@ -36,7 +35,7 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
 
     gchar *json_payload = prompt_build_json(app->config, app->conversation, data->user_input);
     if (!json_payload) {
-        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Gagal membangun JSON payload.");
+        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Failed to build JSON payload.");
         return;
     }
 
@@ -44,7 +43,7 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
     g_free(json_payload);
     
     if (!api_response_body) {
-        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Gagal menghubungi API. Periksa koneksi atau API Key Anda.");
+        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Failed to contact API. Check connection or API Key.");
         return;
     }
 
@@ -56,9 +55,9 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
         JsonObject *obj = json_node_get_object(root);
         
         if (json_object_has_member(obj, "error")) {
-            JsonObject *error_obj = json_object_get_object_member(obj, "error");
-            const gchar *error_msg = json_object_get_string_member_with_default(error_obj, "message", "Terjadi eror tidak diketahui dari API.");
-            g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Eror API: %s", error_msg);
+            JsonObject *error_obj = json_object_get_object_member[obj, "error");
+            const gchar *error_msg = json_object_get_string_member_with_default(error_obj, "message", "Unknown API error.");
+            g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "API Error: %s", error_msg);
         } else {
             JsonArray *candidates = json_object_get_array_member(obj, "candidates");
             if (candidates && json_array_get_length(candidates) > 0) {
@@ -69,16 +68,16 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
                 const gchar *ai_text = json_object_get_string_member(first_part, "text");
                 g_task_return_pointer(task, g_strdup(ai_text), g_free);
             } else {
-                g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Respons AI tidak valid atau kosong.");
+                g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid or empty AI response.");
             }
         }
     } else {
-        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Gagal mem-parsing respons AI.");
+        g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Failed to parse AI response.");
     }
     g_free(api_response_body);
 }
 
-// Callback ini akan dieksekusi di Main Thread setelah worker thread selesai
+// Main thread callback after worker thread completes
 static void send_request_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
     AICodeFriendApp *app = (AICodeFriendApp*)user_data;
     g_autoptr(GError) error = NULL;
@@ -95,7 +94,7 @@ static void send_request_finish(GObject *source_object, GAsyncResult *res, gpoin
     gtk_widget_set_sensitive(app->send_button, TRUE);
 }
 
-// Callback untuk tombol kirim
+// Send button callback
 static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     AICodeFriendApp *app = (AICodeFriendApp*)user_data;
     if (!app || !app->text_entry_buffer) {
@@ -125,7 +124,7 @@ static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     conversation_add_message(app->conversation, "user", user_input);
     
     GtkWidget *history_row = gtk_label_new(user_input);
-    gtk_label_set_xalign(GTK_LABEL(history_row), 0.0);
+    gtk_misc_set_alignment(GTK_MISC(history_row), 0.0, 0.5);
     gtk_list_box_append(GTK_LIST_BOX(app->history_list_box), history_row);
 
     gtk_text_buffer_set_text(app->text_entry_buffer, "", -1);
@@ -148,7 +147,7 @@ static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     g_object_unref(task);
 }
 
-// Callback untuk tombol settings
+// Settings button callback
 static void on_settings_button_clicked(GtkButton *button, gpointer user_data) {
     AICodeFriendApp *app = (AICodeFriendApp*)user_data;
     if (!app || !app->main_window) {
@@ -158,16 +157,16 @@ static void on_settings_button_clicked(GtkButton *button, gpointer user_data) {
 
     g_print("DEBUG: Settings button clicked\n");
 
-    AdwDialog *settings_dialog = settings_dialog_new(GTK_WINDOW(app->main_window), app->config);
+    GtkWidget *settings_dialog = settings_dialog_new(GTK_WINDOW(app->main_window), app->config);
     if (settings_dialog) {
-        g_print("DEBUG: Presenting settings dialog\n");
-        adw_dialog_present(settings_dialog, app->main_window);
+        g_print("DEBUG: Showing settings dialog\n");
+        gtk_widget_show_all(settings_dialog);
     } else {
         g_printerr("ERROR: Failed to create settings dialog\n");
     }
 }
 
-// Callback untuk tombol new chat
+// New chat button callback
 static void on_new_chat_clicked(GtkButton *button, gpointer user_data) {
     AICodeFriendApp *app = (AICodeFriendApp*)user_data;
     if (!app) {
@@ -181,10 +180,10 @@ static void on_new_chat_clicked(GtkButton *button, gpointer user_data) {
     app->conversation = conversation_new();
     
     chat_view_clear(app->chat_view);
-    chat_view_add_message(app->chat_view, "Percakapan baru dimulai.", CHAT_MESSAGE_AI);
+    chat_view_add_message(app->chat_view, "New conversation started.", CHAT_MESSAGE_AI);
 }
 
-// Fungsi utama pembuat jendela
+// Main window creation function
 GtkWidget *window_new(AICodeFriendApp *app) {
     if (!app) {
         g_printerr("ERROR: Invalid app\n");
@@ -193,47 +192,46 @@ GtkWidget *window_new(AICodeFriendApp *app) {
 
     g_print("DEBUG: Creating new window\n");
 
-    GtkWidget *window = adw_application_window_new(GTK_APPLICATION(app->parent));
+    GtkWidget *window = gtk_application_window_new(GTK_APPLICATION(app->parent));
     gtk_window_set_title(GTK_WINDOW(window), "AI CodeFriend");
     gtk_window_set_default_size(GTK_WINDOW(window), 1100, 750);
 
     GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), root_box);
+    gtk_container_add(GTK_CONTAINER(window), root_box);
 
-    // --- Header Bar ---
-    GtkWidget *header = adw_header_bar_new();
-    gtk_box_append(GTK_BOX(root_box), header);
+    // Header Bar
+    GtkWidget *header = gtk_header_bar_new();
+    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header), TRUE);
+    gtk_box_pack_start(GTK_BOX(root_box), header, FALSE, FALSE, 0);
     
     GtkWidget *toggle_button = gtk_toggle_button_new();
-    gtk_button_set_icon_name(GTK_BUTTON(toggle_button), "view-sidebar-symbolic");
-    adw_header_bar_pack_start(ADW_HEADER_BAR(header), toggle_button);
+    gtk_button_set_image(GTK_BUTTON(toggle_button), gtk_image_new_from_icon_name("view-sidebar-symbolic", GTK_ICON_SIZE_BUTTON));
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), toggle_button);
 
     GtkWidget *new_chat_button = gtk_button_new_with_label("New Chat");
-    adw_header_bar_pack_start(ADW_HEADER_BAR(header), new_chat_button);
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), new_chat_button);
     g_signal_connect(new_chat_button, "clicked", G_CALLBACK(on_new_chat_clicked), app);
     
     GtkWidget *settings_button = gtk_button_new_with_label("Settings");
-    adw_header_bar_pack_end(ADW_HEADER_BAR(header), settings_button);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), settings_button);
     g_signal_connect(settings_button, "clicked", G_CALLBACK(on_settings_button_clicked), app);
     
-    // --- Layout Utama dengan AdwOverlaySplitView ---
-    GtkWidget *split_view = adw_overlay_split_view_new();
-    gtk_box_append(GTK_BOX(root_box), split_view);
+    // Main layout with GtkPaned
+    GtkWidget *paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_pack_start(GTK_BOX(root_box), paned, TRUE, TRUE, 0);
 
-    g_object_bind_property(toggle_button, "active", split_view, "show-sidebar", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-
-    // -- Sidebar --
-    GtkWidget *sidebar_scrolled = gtk_scrolled_window_new();
-    adw_overlay_split_view_set_sidebar(ADW_OVERLAY_SPLIT_VIEW(split_view), sidebar_scrolled);
+    // Sidebar
+    GtkWidget *sidebar_scrolled = gtk_scrolled_window_new(NULL, NULL);
+    gtk_paned_pack1(GTK_PANED(paned), sidebar_scrolled, FALSE, FALSE);
     app->history_list_box = gtk_list_box_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(sidebar_scrolled), app->history_list_box);
 
-    // -- Content (Chat Area + Input) --
+    // Content (Chat Area + Input)
     GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    adw_overlay_split_view_set_content(ADW_OVERLAY_SPLIT_VIEW(split_view), content_box);
+    gtk_paned_pack2(GTK_PANED(paned), content_box, TRUE, TRUE);
     
     app->chat_view = chat_view_new();
-    gtk_box_append(GTK_BOX(content_box), app->chat_view->scrolled_window);
+    gtk_box_pack_start(GTK_BOX(content_box), app->chat_view->scrolled_window, TRUE, TRUE, 0);
 
     // Input Bar
     GtkWidget *input_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
@@ -241,7 +239,7 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     gtk_widget_set_margin_end(input_bar, 12);
     gtk_widget_set_margin_top(input_bar, 6);
     gtk_widget_set_margin_bottom(input_bar, 12);
-    GtkWidget *scrolled_input = gtk_scrolled_window_new();
+    GtkWidget *scrolled_input = gtk_scrolled_window_new(NULL, NULL);
     gtk_widget_set_hexpand(scrolled_input, TRUE);
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scrolled_input), 150);
     gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scrolled_input), TRUE);
@@ -249,13 +247,15 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD_CHAR);
     app->text_entry_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_input), text_view);
-    app->send_button = gtk_button_new_from_icon_name("document-send-symbolic");
+    app->send_button = gtk_button_new_from_icon_name("document-send-symbolic", GTK_ICON_SIZE_BUTTON);
     gtk_widget_set_valign(app->send_button, GTK_ALIGN_END);
-    gtk_box_append(GTK_BOX(input_bar), scrolled_input);
-    gtk_box_append(GTK_BOX(input_bar), app->send_button);
-    gtk_box_append(GTK_BOX(content_box), input_bar);
+    gtk_box_pack_start(GTK_BOX(input_bar), scrolled_input, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(input_bar), app->send_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(content_box), input_bar, FALSE, FALSE, 0);
     
     g_signal_connect(app->send_button, "clicked", G_CALLBACK(on_send_button_clicked), app);
+    g_signal_connect_swapped(toggle_button, "toggled", G_CALLBACK(gtk_widget_set_visible), sidebar_scrolled);
 
+    gtk_widget_show_all(window);
     return window;
 }

@@ -1,10 +1,9 @@
 #ifndef AICODEFRIEND_SETTINGS_H
 #define AICODEFRIEND_SETTINGS_H
 
-#include <adwaita.h>
+#include <gtk/gtk.h>
 #include "../utils/config.h"
 
-// Fungsi untuk membuat dialog settings baru
-AdwDialog* settings_dialog_new(GtkWindow *parent, ConfigData *config);
+GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config);
 
 #endif //AICODEFRIEND_SETTINGS_H
