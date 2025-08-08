@@ -10,7 +10,7 @@ Proyek ini bertujuan untuk menciptakan sebuah aplikasi desktop *open-source* yan
 
 #### **Latar Belakang**
 
-Banyak alat bantu AI saat ini sering kali terbatas pada antarmuka web atau IDE, yang sering kali mengorbankan performa atau fleksibilitas. Proyek ini lahir dari visi untuk menciptakan alat yang benar-benar milik pengembang—sebuah aplikasi *native* yang efisien, dapat diandalkan, dan yang paling penting, bisa menyesuaikan diri dengan gaya dan kebutuhan spesifik pengguna, tanpa harus terikat pada platform lain.
+Banyak alat bantu AI saat ini sering kali terbatas pada antarmuka web atau IDE, yang sering kali mengorbankan performa atau fleksibilitas. Proyek ini lahir dari visi untuk menciptakan alat yang benar-benar milik pengembang, sebuah aplikasi *native* yang efisien, dapat diandalkan, dan yang paling penting, bisa menyesuaikan diri dengan gaya dan kebutuhan spesifik pengguna, tanpa harus terikat pada platform lain.
 
 #### **Tujuan Proyek**
 
