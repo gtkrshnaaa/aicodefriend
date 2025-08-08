@@ -110,7 +110,7 @@ Blok ini mendefinisikan kepribadian dan gaya komunikasi AI. Dengan adanya `ai_pe
 
 #### **Pencipta & Pemikir: `user_persona`**
 
-Bagian ini adalah kunci personalisasi. `user_persona` memberikan AI informasi tentang siapa pengguna, latar belakang teknis, preferensi gaya coding, hingga cara berpikirnya. Ini memungkinkan AI memberikan jawaban yang benar-benar relevan dan selaras dengan cara kerja Kiann.
+Bagian ini adalah kunci personalisasi. `user_persona` memberikan AI informasi tentang siapa pengguna, latar belakang teknis, preferensi gaya coding, hingga cara berpikirnya. Ini memungkinkan AI memberikan jawaban yang benar-benar relevan dan selaras dengan cara kerja User.
 
 ```json
 {
@@ -142,7 +142,7 @@ Ini adalah rekaman percakapan dari awal hingga saat ini. `chat_history` berfungs
 
 #### **Pemicu & Babak Baru: `current_user_input`**
 
-Ini adalah input terbaru dari Kiann. `current_user_input` adalah pemicu yang menggerakkan seluruh proses, tempat di mana AI akan membaca permintaan dan mulai menyusun respons yang baru.
+Ini adalah input terbaru dari User. `current_user_input` adalah pemicu yang menggerakkan seluruh proses, tempat di mana AI akan membaca permintaan dan mulai menyusun respons yang baru.
 
 ```json
 {
