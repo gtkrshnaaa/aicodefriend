@@ -21,7 +21,6 @@ ConfigData* config_load(void) {
     
     JsonParser *parser = json_parser_new();
     if (!json_parser_load_from_file(parser, path, NULL)) {
-        // File not found or invalid, create default values
         g_print("Settings file not found or invalid. Creating with default values.\n");
         config->api_key = g_strdup("");
         config->system_context = g_strdup("This is an AI Coding Companion. AI model core task is to assist the user by providing structured responses. All normal text must be formatted using Pango Markup. All code blocks must be enclosed within the custom tags <code-block lang=\"...\">...</code-block>. It is strictly forbidden to use triple backtick markdown (```).");
@@ -60,7 +59,16 @@ void config_save(ConfigData *config) {
     JsonGenerator *gen = json_generator_new();
     json_generator_set_pretty(gen, TRUE);
     JsonNode *root = json_builder_get_root(builder);
-    json_generator_to_file(gen, root, path, NULL);
+
+    // --- INI PERBAIKAN YANG SEBENARNYA ---
+    // 1. Tetapkan 'root' node ke generator
+    json_generator_set_root(gen, root);
+    // 2. Ubah generator menjadi data (string). Argumen kedua untuk panjang, bisa NULL.
+    gchar *json_string = json_generator_to_data(gen, NULL);
+    // 3. Simpan string ke file
+    g_file_set_contents(path, json_string, -1, NULL);
+    g_free(json_string);
+    // --- AKHIR BAGIAN PERBAIKAN ---
     
     json_node_free(root);
     g_object_unref(gen);

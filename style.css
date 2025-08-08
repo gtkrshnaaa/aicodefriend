@@ -1,0 +1,15 @@
+.bubble {
+    padding: 8px 12px;
+    border-radius: 16px;
+    max-width: 75%;
+}
+
+.user-bubble {
+    background-color: #3584e4; /* Biru khas Adwaita */
+    color: white;
+}
+
+.ai-bubble {
+    background-color: #f6f5f4; /* Abu-abu terang khas Adwaita */
+    color: #3d3846;
+}

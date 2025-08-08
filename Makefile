@@ -9,9 +9,9 @@ UI_DIR := $(SRC_DIR)/ui
 API_DIR := $(SRC_DIR)/api
 UTILS_DIR := $(SRC_DIR)/utils
 
-# === Flags & Libraries ===
-CFLAGS := $(shell pkg-config --cflags gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0) -I$(SRC_DIR) -Wall
-LIBS := $(shell pkg-config --libs gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0)
+# === Flags & Libraries (UPDATED) ===
+CFLAGS := $(shell pkg-config --cflags gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0 gtksourceview-5) -I$(SRC_DIR) -Wall
+LIBS := $(shell pkg-config --libs gtk4 libadwaita-1 json-glib-1.0 libsoup-3.0 gtksourceview-5)
 
 # === File Source & Object ===
 SOURCES := $(wildcard $(SRC_DIR)/*.c $(CORE_DIR)/*.c $(UI_DIR)/*.c $(API_DIR)/*.c $(UTILS_DIR)/*.c)
@@ -75,5 +75,4 @@ list:
 	done
 	@echo "✅ File listing generated at $(LISTING_FILE)"
 
-# Mendeklarasikan target yang bukan nama file
 .PHONY: all clean list run
