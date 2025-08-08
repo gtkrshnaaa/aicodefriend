@@ -50,9 +50,16 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
 
     g_print("DEBUG: Received API response: %s\n", api_response_body);
 
-    g_autoptr(JsonParser) parser = json_parser_new();
+    JsonParser *parser = json_parser_new();
     if (json_parser_load_from_data(parser, api_response_body, -1, NULL)) {
-        g_autoptr(JsonNode) root = json_parser_get_root(parser);
+        JsonNode *root = json_parser_get_root(parser);
+        if (!JSON_NODE_HOLDS_OBJECT(root)) {
+            g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid JSON response.");
+            g_object_unref(parser);
+            g_free(api_response_body);
+            return;
+        }
+
         JsonObject *obj = json_node_get_object(root);
         
         if (json_object_has_member(obj, "error")) {
@@ -72,9 +79,11 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
                 g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid or empty AI response.");
             }
         }
+        json_node_unref(root); // Explicitly unref the root node
     } else {
         g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Failed to parse AI response.");
     }
+    g_object_unref(parser);
     g_free(api_response_body);
 }
 
@@ -113,10 +122,11 @@ static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
         return;
     }
 
-    g_autofree gchar *user_input = g_strstrip(user_input_raw);
-    if (g_str_equal(user_input, "")) {
-        g_free(user_input_raw);
+    gchar *user_input = g_strstrip(g_strdup(user_input_raw));
+    if (!user_input || g_str_equal(user_input, "")) {
         g_print("DEBUG: Empty input, ignoring\n");
+        g_free(user_input_raw);
+        g_free(user_input);
         return;
     }
 
@@ -136,12 +146,14 @@ static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
         g_printerr("ERROR: Failed to allocate ThreadData\n");
         gtk_widget_set_sensitive(app->send_button, TRUE);
         g_free(user_input_raw);
+        g_free(user_input);
         return;
     }
 
     thread_data->app = app;
     thread_data->user_input = g_strdup(user_input);
     g_free(user_input_raw);
+    g_free(user_input);
 
     GTask *task = g_task_new(button, NULL, send_request_finish, app);
     g_task_set_task_data(task, thread_data, (GDestroyNotify)thread_data_free);
@@ -183,6 +195,7 @@ static void on_new_chat_clicked(GtkButton *button, gpointer user_data) {
     
     chat_view_clear(app->chat_view);
     chat_view_add_message(app->chat_view, "New conversation started.", CHAT_MESSAGE_AI);
+    conversation_add_message(app->conversation, "model", "New conversation started.");
 }
 
 // Sidebar toggle callback
@@ -227,7 +240,7 @@ GtkWidget *window_new(AICodeFriendApp *app) {
         return NULL;
     }
     gtk_button_set_image(GTK_BUTTON(toggle_button), gtk_image_new_from_icon_name("view-sidebar-symbolic", GTK_ICON_SIZE_BUTTON));
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_button), TRUE); // Sidebar visible by default
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_button), TRUE);
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), toggle_button);
 
     // New chat button
@@ -295,7 +308,7 @@ GtkWidget *window_new(AICodeFriendApp *app) {
         g_object_unref(paned);
         return NULL;
     }
-    gtk_widget_set_size_request(sidebar_scrolled, 200, -1); // Set minimum width for sidebar
+    gtk_widget_set_size_request(sidebar_scrolled, 200, -1);
     gtk_paned_pack1(GTK_PANED(paned), sidebar_scrolled, FALSE, FALSE);
     app->history_list_box = gtk_list_box_new();
     if (!app->history_list_box) {
@@ -311,6 +324,11 @@ GtkWidget *window_new(AICodeFriendApp *app) {
         return NULL;
     }
     gtk_container_add(GTK_CONTAINER(sidebar_scrolled), app->history_list_box);
+    gtk_widget_show(app->history_list_box);
+
+    // Add initial history item for testing
+    GtkWidget *dummy_row = gtk_label_new("Initial conversation");
+    gtk_list_box_insert(GTK_LIST_BOX(app->history_list_box), dummy_row, -1);
 
     // Content (Chat Area + Input)
     GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -439,8 +457,12 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     g_signal_connect(app->send_button, "clicked", G_CALLBACK(on_send_button_clicked), app);
     g_signal_connect(toggle_button, "toggled", G_CALLBACK(on_sidebar_toggled), sidebar_scrolled);
 
-    gtk_paned_set_position(GTK_PANED(paned), 200); // Set initial sidebar width
+    gtk_paned_set_position(GTK_PANED(paned), 200);
     gtk_widget_show_all(window);
+
+    // Add initial message to conversation
+    chat_view_add_message(app->chat_view, "Hii, lets make some code.", CHAT_MESSAGE_AI);
+    conversation_add_message(app->conversation, "model", "Hii, lets make some code.");
 
     return window;
 }

@@ -12,3 +12,13 @@
     background-color: #eeeeec;
     color: #2e3436;
 }
+
+list {
+    background-color: #1d1d1d;
+    min-width: 200px;
+    padding: 8px;
+}
+
+list row {
+    padding: 4px;
+}

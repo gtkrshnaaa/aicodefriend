@@ -21,7 +21,7 @@ static void app_startup(GApplication *application) {
     
     // Load CSS
     GtkCssProvider *provider = gtk_css_provider_new();
-    GFile *css_file = g_file_new_for_path("style.css");
+    GFile *css_file = g_file_new_for_path("assets/styles/style.css");
     GError *error = NULL;
     
     if (!gtk_css_provider_load_from_file(provider, css_file, &error)) {
