@@ -35,7 +35,12 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
     gtk_expander_set_label(GTK_EXPANDER(expander), title);
     gtk_expander_set_expanded(GTK_EXPANDER(expander), FALSE);
 
-    GtkWidget *vbox = gtk_vbox_new(FALSE, 6);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    if (!vbox) {
+        g_printerr("ERROR: Failed to create box\n");
+        g_object_unref(expander);
+        return NULL;
+    }
     GtkWidget *label = gtk_label_new(subtitle);
     gtk_widget_set_margin_start(label, 12);
     gtk_widget_set_margin_end(label, 12);
@@ -59,8 +64,8 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
     
     g_signal_connect(buffer, "changed", G_CALLBACK(on_persona_text_changed), target_string);
     
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), text_view);
-    gtk_container_add(GTK_CONTAINER(vbox), scrolled_window);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), text_view);
+    gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(expander), vbox);
 
     return expander;
@@ -81,11 +86,11 @@ GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
     gtk_window_set_default_size(GTK_WINDOW(dialog), 600, 400);
 
     GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    GtkWidget *vbox = gtk_vbox_new(FALSE, 12);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
     gtk_container_add(GTK_CONTAINER(content_area), vbox);
 
     // API Key Group
-    GtkWidget *group_api = gtk_vbox_new(FALSE, 6);
+    GtkWidget *group_api = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_set_margin_start(group_api, 12);
     gtk_widget_set_margin_end(group_api, 12);
     gtk_widget_set_margin_top(group_api, 12);
@@ -107,7 +112,7 @@ GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
     gtk_box_pack_start(GTK_BOX(vbox), group_api, FALSE, FALSE, 0);
 
     // Persona Group
-    GtkWidget *group_persona = gtk_vbox_new(FALSE, 6);
+    GtkWidget *group_persona = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_set_margin_start(group_persona, 12);
     gtk_widget_set_margin_end(group_persona, 12);
     gtk_widget_set_margin_top(group_persona, 12);

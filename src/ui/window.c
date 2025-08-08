@@ -55,7 +55,7 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
         JsonObject *obj = json_node_get_object(root);
         
         if (json_object_has_member(obj, "error")) {
-            JsonObject *error_obj = json_object_get_object_member[obj, "error");
+            JsonObject *error_obj = json_object_get_object_member(obj, "error");
             const gchar *error_msg = json_object_get_string_member_with_default(error_obj, "message", "Unknown API error.");
             g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "API Error: %s", error_msg);
         } else {
@@ -124,8 +124,9 @@ static void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     conversation_add_message(app->conversation, "user", user_input);
     
     GtkWidget *history_row = gtk_label_new(user_input);
-    gtk_misc_set_alignment(GTK_MISC(history_row), 0.0, 0.5);
-    gtk_list_box_append(GTK_LIST_BOX(app->history_list_box), history_row);
+    gtk_widget_set_halign(history_row, GTK_ALIGN_START);
+    gtk_widget_set_valign(history_row, GTK_ALIGN_CENTER);
+    gtk_list_box_insert(GTK_LIST_BOX(app->history_list_box), history_row, -1);
 
     gtk_text_buffer_set_text(app->text_entry_buffer, "", -1);
 
@@ -224,7 +225,7 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     GtkWidget *sidebar_scrolled = gtk_scrolled_window_new(NULL, NULL);
     gtk_paned_pack1(GTK_PANED(paned), sidebar_scrolled, FALSE, FALSE);
     app->history_list_box = gtk_list_box_new();
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(sidebar_scrolled), app->history_list_box);
+    gtk_container_add(GTK_CONTAINER(sidebar_scrolled), app->history_list_box);
 
     // Content (Chat Area + Input)
     GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -246,7 +247,7 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     GtkWidget *text_view = gtk_text_view_new();
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD_CHAR);
     app->text_entry_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_input), text_view);
+    gtk_container_add(GTK_CONTAINER(scrolled_input), text_view);
     app->send_button = gtk_button_new_from_icon_name("document-send-symbolic", GTK_ICON_SIZE_BUTTON);
     gtk_widget_set_valign(app->send_button, GTK_ALIGN_END);
     gtk_box_pack_start(GTK_BOX(input_bar), scrolled_input, TRUE, TRUE, 0);

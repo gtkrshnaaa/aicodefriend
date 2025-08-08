@@ -22,7 +22,13 @@ static void app_startup(GApplication *application) {
     // Load CSS
     GtkCssProvider *provider = gtk_css_provider_new();
     GFile *css_file = g_file_new_for_path("style.css");
-    gtk_css_provider_load_from_file(provider, css_file);
+    GError *error = NULL;
+    
+    if (!gtk_css_provider_load_from_file(provider, css_file, &error)) {
+        g_printerr("ERROR: Failed to load CSS file: %s\n", error ? error->message : "Unknown error");
+        g_clear_error(&error);
+    }
+    
     g_object_unref(css_file);
 
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
@@ -39,7 +45,7 @@ AICodeFriendApp *app_new(void) {
     AICodeFriendApp *self = g_new0(AICodeFriendApp, 1);
     
     // Use valid Application ID
-    self->parent = gtk_application_new("com.gtkrshnaaa.aicodefriend", G_APPLICATION_FLAGS_NONE);
+    self->parent = gtk_application_new("com.gtkrshnaaa.aicodefriend", G_APPLICATION_DEFAULT_FLAGS);
     
     // Store self in GApplication for callbacks
     g_object_set_data(G_OBJECT(self->parent), "app-data", self);

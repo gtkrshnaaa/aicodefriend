@@ -23,7 +23,8 @@ void chat_view_add_message(ChatView *chat_view, const gchar *text, ChatMessageTy
     }
     gtk_label_set_markup(GTK_LABEL(label), text);
     gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
-    gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
     
     gtk_style_context_add_class(gtk_widget_get_style_context(label), "bubble");
 
@@ -47,12 +48,11 @@ void chat_view_clear(ChatView *chat_view) {
 
     g_print("DEBUG: Clearing chat view\n");
 
-    GtkWidget *child = gtk_widget_get_first_child(chat_view->message_box);
-    while (child != NULL) {
-        GtkWidget *next_child = gtk_widget_get_next_sibling(child);
-        gtk_container_remove(GTK_CONTAINER(chat_view->message_box), child);
-        child = next_child;
+    GList *children = gtk_container_get_children(GTK_CONTAINER(chat_view->message_box));
+    for (GList *iter = children; iter != NULL; iter = g_list_next(iter)) {
+        gtk_container_remove(GTK_CONTAINER(chat_view->message_box), GTK_WIDGET(iter->data));
     }
+    g_list_free(children);
 }
 
 ChatView* chat_view_new(void) {
@@ -84,7 +84,7 @@ ChatView* chat_view_new(void) {
     gtk_widget_set_margin_top(cv->message_box, 12);
     gtk_widget_set_margin_bottom(cv->message_box, 12);
 
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(cv->scrolled_window), cv->message_box);
+    gtk_container_add(GTK_CONTAINER(cv->scrolled_window), cv->message_box);
 
     chat_view_add_message(cv, "Hii, lets make some code.", CHAT_MESSAGE_AI);
     
