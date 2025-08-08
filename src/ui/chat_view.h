@@ -12,6 +12,7 @@ typedef struct {
     GtkWidget *scrolled_window;
     GtkWidget *text_view;
     GtkTextBuffer *buffer;
+    GtkWidget *message_container; // Container untuk pesan kiri-kanan
 } ChatView;
 
 ChatView* chat_view_new(void);

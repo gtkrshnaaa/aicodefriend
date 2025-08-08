@@ -4,21 +4,30 @@
 }
 
 .user-bubble {
-    background-color: #729fcf;
+    background-color: rgba(114, 159, 207, 0.8); /* Biru semi-transparan */
     color: white;
 }
 
-.ai-bubble {
-    background-color: #eeeeec;
-    color: #2e3436;
+.ai-text {
+    color: #2e3436; /* Teks gelap sesuai Adwaita */
+    margin-left: 12px;
+}
+
+.code-block {
+    background-color: #2e3436; /* Latar belakang gelap */
+    color: #ffffff; /* Teks putih */
+    padding: 8px;
+    border-radius: 4px;
+    margin: 4px 0;
 }
 
 list {
-    background-color: #1d1d1d;
+    background-color: #1d1d1d; /* Latar belakang sidebar gelap */
     min-width: 200px;
     padding: 8px;
 }
 
 list row {
     padding: 4px;
+    color: #eeeeec; /* Teks terang untuk kontras */
 }

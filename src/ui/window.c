@@ -79,11 +79,11 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
                 g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid or empty AI response.");
             }
         }
-        json_node_unref(root); // Explicitly unref the root node
+        json_node_unref(root); // Pastikan dilepaskan dengan benar
+        g_object_unref(parser);
     } else {
         g_task_return_new_error(task, G_IO_ERROR, G_IO_ERROR_FAILED, "Failed to parse AI response.");
     }
-    g_object_unref(parser);
     g_free(api_response_body);
 }
 
