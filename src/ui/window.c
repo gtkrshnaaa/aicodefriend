@@ -17,6 +17,7 @@ static void send_request_in_thread(GTask *task, gpointer source_object, gpointer
 static void on_send_button_clicked(GtkButton *button, gpointer user_data);
 static void on_settings_button_clicked(GtkButton *button, gpointer user_data);
 static void on_new_chat_clicked(GtkButton *button, gpointer user_data);
+static void on_sidebar_toggled(GtkToggleButton *button, gpointer user_data);
 
 // Free ThreadData
 static void thread_data_free(ThreadData *data) {
@@ -184,6 +185,14 @@ static void on_new_chat_clicked(GtkButton *button, gpointer user_data) {
     chat_view_add_message(app->chat_view, "New conversation started.", CHAT_MESSAGE_AI);
 }
 
+// Sidebar toggle callback
+static void on_sidebar_toggled(GtkToggleButton *button, gpointer user_data) {
+    GtkWidget *sidebar_scrolled = (GtkWidget*)user_data;
+    gboolean active = gtk_toggle_button_get_active(button);
+    g_print("DEBUG: Sidebar toggled, active: %d\n", active);
+    gtk_widget_set_visible(sidebar_scrolled, active);
+}
+
 // Main window creation function
 GtkWidget *window_new(AICodeFriendApp *app) {
     if (!app) {
@@ -197,66 +206,241 @@ GtkWidget *window_new(AICodeFriendApp *app) {
     gtk_window_set_title(GTK_WINDOW(window), "AI CodeFriend");
     gtk_window_set_default_size(GTK_WINDOW(window), 1100, 750);
 
-    GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), root_box);
-
-    // Header Bar
+    // Create header bar
+    g_print("DEBUG: Creating header bar\n");
     GtkWidget *header = gtk_header_bar_new();
+    if (!header) {
+        g_printerr("ERROR: Failed to create header bar\n");
+        g_object_unref(window);
+        return NULL;
+    }
     gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header), TRUE);
-    gtk_box_pack_start(GTK_BOX(root_box), header, FALSE, FALSE, 0);
-    
+    gtk_header_bar_set_title(GTK_HEADER_BAR(header), "AI CodeFriend");
+    gtk_window_set_titlebar(GTK_WINDOW(window), header);
+
+    // Toggle button for sidebar
     GtkWidget *toggle_button = gtk_toggle_button_new();
+    if (!toggle_button) {
+        g_printerr("ERROR: Failed to create toggle button\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        return NULL;
+    }
     gtk_button_set_image(GTK_BUTTON(toggle_button), gtk_image_new_from_icon_name("view-sidebar-symbolic", GTK_ICON_SIZE_BUTTON));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_button), TRUE); // Sidebar visible by default
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), toggle_button);
 
+    // New chat button
     GtkWidget *new_chat_button = gtk_button_new_with_label("New Chat");
+    if (!new_chat_button) {
+        g_printerr("ERROR: Failed to create new chat button\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        return NULL;
+    }
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), new_chat_button);
     g_signal_connect(new_chat_button, "clicked", G_CALLBACK(on_new_chat_clicked), app);
     
+    // Settings button
     GtkWidget *settings_button = gtk_button_new_with_label("Settings");
+    if (!settings_button) {
+        g_printerr("ERROR: Failed to create settings button\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        return NULL;
+    }
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), settings_button);
     g_signal_connect(settings_button, "clicked", G_CALLBACK(on_settings_button_clicked), app);
-    
+
+    // Main container
+    GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    if (!root_box) {
+        g_printerr("ERROR: Failed to create root box\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        return NULL;
+    }
+    gtk_container_add(GTK_CONTAINER(window), root_box);
+
     // Main layout with GtkPaned
     GtkWidget *paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    if (!paned) {
+        g_printerr("ERROR: Failed to create paned\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        return NULL;
+    }
     gtk_box_pack_start(GTK_BOX(root_box), paned, TRUE, TRUE, 0);
 
     // Sidebar
     GtkWidget *sidebar_scrolled = gtk_scrolled_window_new(NULL, NULL);
+    if (!sidebar_scrolled) {
+        g_printerr("ERROR: Failed to create sidebar scrolled window\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        return NULL;
+    }
+    gtk_widget_set_size_request(sidebar_scrolled, 200, -1); // Set minimum width for sidebar
     gtk_paned_pack1(GTK_PANED(paned), sidebar_scrolled, FALSE, FALSE);
     app->history_list_box = gtk_list_box_new();
+    if (!app->history_list_box) {
+        g_printerr("ERROR: Failed to create history list box\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        return NULL;
+    }
     gtk_container_add(GTK_CONTAINER(sidebar_scrolled), app->history_list_box);
 
     // Content (Chat Area + Input)
     GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    if (!content_box) {
+        g_printerr("ERROR: Failed to create content box\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        return NULL;
+    }
     gtk_paned_pack2(GTK_PANED(paned), content_box, TRUE, TRUE);
     
     app->chat_view = chat_view_new();
+    if (!app->chat_view) {
+        g_printerr("ERROR: Failed to create chat view\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        g_object_unref(content_box);
+        return NULL;
+    }
     gtk_box_pack_start(GTK_BOX(content_box), app->chat_view->scrolled_window, TRUE, TRUE, 0);
 
     // Input Bar
     GtkWidget *input_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    if (!input_bar) {
+        g_printerr("ERROR: Failed to create input bar\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        g_object_unref(content_box);
+        g_object_unref(app->chat_view->scrolled_window);
+        g_free(app->chat_view);
+        return NULL;
+    }
     gtk_widget_set_margin_start(input_bar, 12);
     gtk_widget_set_margin_end(input_bar, 12);
     gtk_widget_set_margin_top(input_bar, 6);
     gtk_widget_set_margin_bottom(input_bar, 12);
     GtkWidget *scrolled_input = gtk_scrolled_window_new(NULL, NULL);
+    if (!scrolled_input) {
+        g_printerr("ERROR: Failed to create scrolled input\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        g_object_unref(content_box);
+        g_object_unref(app->chat_view->scrolled_window);
+        g_free(app->chat_view);
+        g_object_unref(input_bar);
+        return NULL;
+    }
     gtk_widget_set_hexpand(scrolled_input, TRUE);
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scrolled_input), 150);
     gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scrolled_input), TRUE);
     GtkWidget *text_view = gtk_text_view_new();
+    if (!text_view) {
+        g_printerr("ERROR: Failed to create text view\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        g_object_unref(content_box);
+        g_object_unref(app->chat_view->scrolled_window);
+        g_free(app->chat_view);
+        g_object_unref(input_bar);
+        g_object_unref(scrolled_input);
+        return NULL;
+    }
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD_CHAR);
     app->text_entry_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     gtk_container_add(GTK_CONTAINER(scrolled_input), text_view);
     app->send_button = gtk_button_new_from_icon_name("document-send-symbolic", GTK_ICON_SIZE_BUTTON);
+    if (!app->send_button) {
+        g_printerr("ERROR: Failed to create send button\n");
+        g_object_unref(window);
+        g_object_unref(header);
+        g_object_unref(toggle_button);
+        g_object_unref(new_chat_button);
+        g_object_unref(settings_button);
+        g_object_unref(root_box);
+        g_object_unref(paned);
+        g_object_unref(sidebar_scrolled);
+        g_object_unref(app->history_list_box);
+        g_object_unref(content_box);
+        g_object_unref(app->chat_view->scrolled_window);
+        g_free(app->chat_view);
+        g_object_unref(input_bar);
+        g_object_unref(scrolled_input);
+        g_object_unref(text_view);
+        return NULL;
+    }
     gtk_widget_set_valign(app->send_button, GTK_ALIGN_END);
     gtk_box_pack_start(GTK_BOX(input_bar), scrolled_input, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(input_bar), app->send_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(content_box), input_bar, FALSE, FALSE, 0);
     
     g_signal_connect(app->send_button, "clicked", G_CALLBACK(on_send_button_clicked), app);
-    g_signal_connect_swapped(toggle_button, "toggled", G_CALLBACK(gtk_widget_set_visible), sidebar_scrolled);
+    g_signal_connect(toggle_button, "toggled", G_CALLBACK(on_sidebar_toggled), sidebar_scrolled);
 
+    gtk_paned_set_position(GTK_PANED(paned), 200); // Set initial sidebar width
     gtk_widget_show_all(window);
+
     return window;
 }

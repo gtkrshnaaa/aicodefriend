@@ -18,6 +18,21 @@ static void on_persona_text_changed(GtkTextBuffer *buffer, gpointer user_data) {
     *target_string_ptr = g_strdup(new_text);
 }
 
+// Callback for API key entry changes
+static void on_api_key_changed(GtkEntry *entry, gpointer user_data) {
+    ConfigData *config = (ConfigData*)user_data;
+    if (!config) {
+        g_printerr("ERROR: Invalid config in on_api_key_changed\n");
+        return;
+    }
+
+    g_print("DEBUG: API key changed\n");
+
+    const gchar *new_text = gtk_entry_get_text(entry);
+    g_free(config->api_key);
+    config->api_key = g_strdup(new_text);
+}
+
 // Helper to create expander row for each persona
 static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, gchar **target_string) {
     if (!title || !subtitle || !target_string) {
@@ -42,6 +57,12 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
         return NULL;
     }
     GtkWidget *label = gtk_label_new(subtitle);
+    if (!label) {
+        g_printerr("ERROR: Failed to create label\n");
+        g_object_unref(expander);
+        g_object_unref(vbox);
+        return NULL;
+    }
     gtk_widget_set_margin_start(label, 12);
     gtk_widget_set_margin_end(label, 12);
     gtk_widget_set_margin_top(label, 6);
@@ -49,6 +70,13 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
     gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
 
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    if (!scrolled_window) {
+        g_printerr("ERROR: Failed to create scrolled window\n");
+        g_object_unref(expander);
+        g_object_unref(vbox);
+        g_object_unref(label);
+        return NULL;
+    }
     gtk_widget_set_size_request(scrolled_window, -1, 200);
 
     GtkWidget *text_view = gtk_text_view_new();
@@ -56,10 +84,21 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
         g_printerr("ERROR: Failed to create text view\n");
         g_object_unref(expander);
         g_object_unref(vbox);
+        g_object_unref(label);
+        g_object_unref(scrolled_window);
         return NULL;
     }
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD_CHAR);
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    if (!buffer) {
+        g_printerr("ERROR: Failed to get text buffer\n");
+        g_object_unref(expander);
+        g_object_unref(vbox);
+        g_object_unref(label);
+        g_object_unref(scrolled_window);
+        g_object_unref(text_view);
+        return NULL;
+    }
     gtk_text_buffer_set_text(buffer, *target_string ? *target_string : "", -1);
     
     g_signal_connect(buffer, "changed", G_CALLBACK(on_persona_text_changed), target_string);
@@ -83,19 +122,46 @@ GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
                                                    "_OK", GTK_RESPONSE_OK,
                                                    "_Cancel", GTK_RESPONSE_CANCEL,
                                                    NULL);
+    if (!dialog) {
+        g_printerr("ERROR: Failed to create dialog\n");
+        return NULL;
+    }
     gtk_window_set_default_size(GTK_WINDOW(dialog), 600, 400);
 
     GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    if (!content_area) {
+        g_printerr("ERROR: Failed to get content area\n");
+        g_object_unref(dialog);
+        return NULL;
+    }
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    if (!vbox) {
+        g_printerr("ERROR: Failed to create vbox\n");
+        g_object_unref(dialog);
+        return NULL;
+    }
     gtk_container_add(GTK_CONTAINER(content_area), vbox);
 
     // API Key Group
     GtkWidget *group_api = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    if (!group_api) {
+        g_printerr("ERROR: Failed to create group_api\n");
+        g_object_unref(dialog);
+        g_object_unref(vbox);
+        return NULL;
+    }
     gtk_widget_set_margin_start(group_api, 12);
     gtk_widget_set_margin_end(group_api, 12);
     gtk_widget_set_margin_top(group_api, 12);
     gtk_widget_set_margin_bottom(group_api, 12);
     GtkWidget *label_api = gtk_label_new("<b>Koneksi</b>");
+    if (!label_api) {
+        g_printerr("ERROR: Failed to create label_api\n");
+        g_object_unref(dialog);
+        g_object_unref(vbox);
+        g_object_unref(group_api);
+        return NULL;
+    }
     gtk_label_set_use_markup(GTK_LABEL(label_api), TRUE);
     gtk_box_pack_start(GTK_BOX(group_api), label_api, FALSE, FALSE, 0);
 
@@ -103,21 +169,44 @@ GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
     if (!row_api_key) {
         g_printerr("ERROR: Failed to create API key entry\n");
         g_object_unref(dialog);
+        g_object_unref(vbox);
+        g_object_unref(group_api);
+        g_object_unref(label_api);
         return NULL;
     }
     gtk_entry_set_placeholder_text(GTK_ENTRY(row_api_key), "Gemini API Key");
+    gtk_entry_set_text(GTK_ENTRY(row_api_key), config->api_key ? config->api_key : "");
+    g_signal_connect(row_api_key, "changed", G_CALLBACK(on_api_key_changed), config);
     gtk_box_pack_start(GTK_BOX(group_api), row_api_key, FALSE, FALSE, 0);
-    g_object_bind_property(config, "api_key", row_api_key, "text", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
     gtk_box_pack_start(GTK_BOX(vbox), group_api, FALSE, FALSE, 0);
 
     // Persona Group
     GtkWidget *group_persona = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    if (!group_persona) {
+        g_printerr("ERROR: Failed to create group_persona\n");
+        g_object_unref(dialog);
+        g_object_unref(vbox);
+        g_object_unref(group_api);
+        g_object_unref(label_api);
+        g_object_unref(row_api_key);
+        return NULL;
+    }
     gtk_widget_set_margin_start(group_persona, 12);
     gtk_widget_set_margin_end(group_persona, 12);
     gtk_widget_set_margin_top(group_persona, 12);
     gtk_widget_set_margin_bottom(group_persona, 12);
     GtkWidget *label_persona = gtk_label_new("<b>Personalisasi</b>");
+    if (!label_persona) {
+        g_printerr("ERROR: Failed to create label_persona\n");
+        g_object_unref(dialog);
+        g_object_unref(vbox);
+        g_object_unref(group_api);
+        g_object_unref(label_api);
+        g_object_unref(row_api_key);
+        g_object_unref(group_persona);
+        return NULL;
+    }
     gtk_label_set_use_markup(GTK_LABEL(label_persona), TRUE);
     gtk_box_pack_start(GTK_BOX(group_persona), label_persona, FALSE, FALSE, 0);
     
