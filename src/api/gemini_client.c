@@ -2,7 +2,7 @@
 #include <libsoup/soup.h>
 
 // URL endpoint untuk Gemini API
-static const gchar *GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+static const gchar *GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 gchar* gemini_client_send_prompt(const gchar *api_key, const gchar *json_payload) {
     // Membuat session untuk koneksi HTTP

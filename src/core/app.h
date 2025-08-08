@@ -3,21 +3,21 @@
 
 #include <adwaita.h>
 #include "../utils/config.h"
+#include "../ui/chat_view.h" 
 #include "conversation.h"
 
-// Memberikan nama tag '_AICodeFriendApp' pada struct
 typedef struct _AICodeFriendApp {
     AdwApplication *parent;
     
-    // Data
     ConfigData *config;
     Conversation *conversation;
 
     // Widget Utama
     GtkWidget *main_window;
-    GtkWidget *chat_view;
+    ChatView *chat_view; 
     GtkWidget *send_button;
     GtkTextBuffer *text_entry_buffer;
+    GtkWidget *history_list_box;
 
 } AICodeFriendApp;
 

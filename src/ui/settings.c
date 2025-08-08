@@ -6,10 +6,10 @@ static void on_persona_text_changed(GtkTextBuffer *buffer, gpointer user_data) {
     
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(buffer, &start, &end);
-    gchar *new_text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
+    g_autofree gchar *new_text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
 
     g_free(*target_string_ptr);
-    *target_string_ptr = new_text;
+    *target_string_ptr = g_strdup(new_text);
 }
 
 // Helper untuk membuat baris expander untuk setiap persona
@@ -36,15 +36,20 @@ static GtkWidget* create_persona_row(const gchar *title, const gchar *subtitle, 
 
 
 GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
-    GtkWidget *dialog = adw_preferences_dialog_new();
+    // --- PERBAIKAN DI SINI ---
+    // adw_dialog_new() tidak menerima argumen.
+    // Judul dan parent di-set secara terpisah setelah dialog dibuat.
+    GtkWidget *dialog = adw_dialog_new();
     gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Pengaturan");
+    // --- AKHIR PERBAIKAN ---
+
     gtk_window_set_default_size(GTK_WINDOW(dialog), 520, 600);
 
-    // DIPERBAIKI: Kita gunakan satu halaman saja
     GtkWidget *page = adw_preferences_page_new();
     adw_dialog_set_child(ADW_DIALOG(dialog), page);
     
-    // --- Grup untuk API Key ---
+    // Grup untuk API Key
     GtkWidget *group_api = adw_preferences_group_new();
     adw_preferences_page_add(ADW_PREFERENCES_PAGE(page), ADW_PREFERENCES_GROUP(group_api));
     adw_preferences_group_set_title(ADW_PREFERENCES_GROUP(group_api), "Koneksi");
@@ -54,11 +59,10 @@ GtkWidget* settings_dialog_new(GtkWindow *parent, ConfigData *config) {
     g_object_bind_property(config, "api_key", row_api_key, "text", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
     adw_preferences_group_add(ADW_PREFERENCES_GROUP(group_api), row_api_key);
 
-    // --- Grup untuk Persona ---
+    // Grup untuk Persona
     GtkWidget *group_persona = adw_preferences_group_new();
     adw_preferences_page_add(ADW_PREFERENCES_PAGE(page), ADW_PREFERENCES_GROUP(group_persona));
     adw_preferences_group_set_title(ADW_PREFERENCES_GROUP(group_persona), "Personalisasi");
-    adw_preferences_group_set_description(ADW_PREFERENCES_GROUP(group_persona), "Sesuaikan bagaimana AI dan aplikasi memahami Anda.");
 
     gtk_list_box_append(GTK_LIST_BOX(group_persona), create_persona_row("System Context", "Aturan dasar untuk AI.", &config->system_context));
     gtk_list_box_append(GTK_LIST_BOX(group_persona), create_persona_row("AI Persona", "Kepribadian dan gaya bicara AI.", &config->ai_persona));

@@ -35,7 +35,7 @@ static void app_startup(GApplication *application) {
 AICodeFriendApp *app_new(void) {
     AICodeFriendApp *self = g_new0(AICodeFriendApp, 1);
     
-    self->parent = adw_application_new("dev.kiann.aicodefriend", G_APPLICATION_DEFAULT_FLAGS);
+    self->parent = adw_application_new("aicodefriend", G_APPLICATION_DEFAULT_FLAGS);
     
     // Simpan pointer 'self' ke dalam objek GApplication agar bisa diakses di callback
     g_object_set_data(G_OBJECT(self->parent), "app-data", self);
