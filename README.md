@@ -1,3 +1,7 @@
+Written in Bahasa Indonesia
+
+---
+
 # **CODEFRIEND - An AI coding companion that helping u like a parter in focus.**
 
 Proyek ini bertujuan untuk menciptakan sebuah aplikasi desktop *open-source* yang ringan dan cepat, berfungsi sebagai *AI coding companion* yang sangat personal. Dibangun menggunakan bahasa pemrograman **C** dan **GTK** untuk antarmuka pengguna, aplikasi ini memanfaatkan **Gemini API** sebagai mesin kecerdasannya. Fokus utama proyek ini adalah menyediakan pengalaman coding yang terintegrasi, di mana balasan dari AI diproses secara terstruktur dan ditampilkan dengan indah, sesuai dengan preferensi unik setiap penggunanya.
