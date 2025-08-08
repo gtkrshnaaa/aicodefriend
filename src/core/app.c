@@ -21,7 +21,11 @@ static void app_startup(GApplication *application) {
     
     // Load CSS
     GtkCssProvider *provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_path(provider, "style.css");
+    // Menggunakan path yang lebih aman jika style.css tidak ada
+    GFile *css_file = g_file_new_for_path("style.css");
+    gtk_css_provider_load_from_file(provider, css_file);
+    g_object_unref(css_file);
+
     gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                                GTK_STYLE_PROVIDER(provider),
                                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -35,7 +39,8 @@ static void app_startup(GApplication *application) {
 AICodeFriendApp *app_new(void) {
     AICodeFriendApp *self = g_new0(AICodeFriendApp, 1);
     
-    self->parent = adw_application_new("aicodefriend", G_APPLICATION_DEFAULT_FLAGS);
+    // Menggunakan Application ID yang valid (format reverse-DNS)
+    self->parent = adw_application_new("com.gtkrshnaaa.aicodefriend", G_APPLICATION_DEFAULT_FLAGS);
     
     // Simpan pointer 'self' ke dalam objek GApplication agar bisa diakses di callback
     g_object_set_data(G_OBJECT(self->parent), "app-data", self);
